@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EngagePositive Blog Performance Tracker</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --ink: #1a1d21;
+  --muted: #626a72;
+  --line: #e6e9ee;
+  --accent: #2f6df6;
+  --new: #6b7280;
+  --investigating: #b45309;
+  --fixing: #7c3aed;
+  --done: #15803d;
+  --monitoring: #0e7490;
+  --drop: #dc2626;
+  --opp: #2563eb;
+  --shadow: 0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.04);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px; line-height: 1.45; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 20px 18px 60px; }
+header h1 { font-size: 20px; margin: 0 0 2px; }
+header p { color: var(--muted); margin: 0 0 16px; font-size: 13px; }
+.bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }
+.chip { border:1px solid var(--line); background:var(--card); border-radius:999px;
+  padding:6px 12px; cursor:pointer; font-size:12.5px; color:var(--ink); display:flex; gap:7px; align-items:center; }
+.chip.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip .n { background:var(--bg); border-radius:999px; padding:1px 7px; font-weight:600; font-size:11.5px; }
+.dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
+select, input[type=search] { font:inherit; padding:7px 10px; border:1px solid var(--line);
+  border-radius:8px; background:var(--card); color:var(--ink); }
+input[type=search] { min-width: 200px; flex:1; }
+.spacer { flex:1; }
+.btn { font:inherit; padding:7px 12px; border:1px solid var(--line); border-radius:8px;
+  background:var(--card); cursor:pointer; color:var(--ink); }
+.btn:hover { border-color: var(--accent); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+  box-shadow: var(--shadow); padding:14px 16px; margin-bottom:12px; }
+.card-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+.tag { font-size:11px; font-weight:600; padding:2px 9px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; }
+.tag.drop { background:#fef2f2; color:var(--drop); }
+.tag.opp { background:#eff6ff; color:var(--opp); }
+.title { font-weight:600; font-size:15px; margin:6px 0 2px; }
+.url { color:var(--muted); font-size:12px; word-break:break-all; text-decoration:none; }
+.url:hover { color: var(--accent); }
+.metrics { display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 0; }
+.metric { font-size:12.5px; }
+.metric b { display:block; font-size:14px; }
+.metric span { color:var(--muted); font-size:11.5px; }
+.action { background:var(--bg); border-radius:8px; padding:10px 12px; font-size:13px; margin:8px 0; }
+.action .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; }
+.row2 { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:8px; }
+.statusSel { font-weight:600; }
+textarea { font:inherit; width:100%; min-height:38px; padding:8px 10px; border:1px solid var(--line);
+  border-radius:8px; resize:vertical; margin-top:8px; background:var(--card); color:var(--ink); }
+.updated { color:var(--muted); font-size:11px; }
+.runlbl { color:var(--muted); font-size:12px; }
+.pill { font-size:11px; font-weight:600; padding:3px 10px; border-radius:999px; color:#fff; }
+.empty { text-align:center; color:var(--muted); padding:50px 20px; }
+.legend { color:var(--muted); font-size:12px; margin-left:auto; }
+.sample-banner { background:#fffbeb; border:1px solid #fde68a; color:#92400e;
+  border-radius:10px; padding:10px 14px; font-size:12.5px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Blog Performance Tracker &middot; engagepositive.com</h1>
+    <p>Findings from each scheduled run (GA4 + Search Console + Clarity). Set a status and notes per item; your updates are saved in this view.</p>
+  </header>
+
+  <div id="sampleBanner" class="sample-banner">
+    Loaded with findings from the 2026-07-16 run (Search Console + Clarity). GA4 was not captured that run. Future scheduled runs add their findings here automatically.
+  </div>
+
+  <div class="bar" id="statusChips"></div>
+
+  <div class="controls">
+    <select id="runFilter"><option value="all">All runs</option></select>
+    <select id="catFilter">
+      <option value="all">All types</option>
+      <option value="Keyword Opportunity">Keyword opportunities</option>
+      <option value="Traffic Drop">Traffic drops</option>
+    </select>
+    <input type="search" id="search" placeholder="Search post, keyword, action...">
+    <div class="spacer"></div>
+    <button class="btn" id="exportBtn">Export backup (JSON)</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+// ---- Findings data (seeded by each run). Replace/append via the artifact updater. ----
+// Each finding needs a STABLE unique id so status/notes survive data refreshes.
+const FINDINGS = [
+  { id:"2026-07-17-opp-1", runDate:"2026-07-17", category:"Keyword Opportunity",
+    title:"Shopify SEO Agency UK", url:"https://engagepositive.com/blog/shopify-seo-agency-uk/",
+    keyword:"top shopify seo agencies uk", position:13.8, impressions:27, ctr:"0%",
+    intent:"Transactional", action:"Rewrite title + H1 as a 'Top Shopify SEO Agencies UK (2026)' listicle; add an agency comparison table; add a 'How to choose a Shopify SEO agency' H2 (captures sister query at pos 14.4 / 26 imp); add FAQ schema; internal links from /ecommerce-seo-services/ and /case-studies/.",
+    clarity:"GA4 engagement only 3s on this page; strengthen the above-fold answer." },
+  { id:"2026-07-17-opp-2", runDate:"2026-07-17", category:"Keyword Opportunity",
+    title:"VIP Email Flow", url:"https://engagepositive.com/blog/vip-email-flow/",
+    keyword:"klaviyo vip flow", position:13.9, impressions:15, ctr:"0%",
+    intent:"Informational", action:"Add a 'Klaviyo VIP flow setup' H2 with steps and screenshots; add a VIP email examples section (sister query 'vip email examples' pos 16.4 / 16 imp); retitle to 'VIP Email Flow: Klaviyo Setup + Examples'; add concise answer paragraphs for the long-tail VIP questions already ranking pos 5-6.",
+    clarity:"GA4 engagement 1m16s (good) but only 2 views; a visibility problem, not a content problem." },
+  { id:"2026-07-17-opp-3", runDate:"2026-07-17", category:"Keyword Opportunity",
+    title:"Google Shopping Ecommerce UK Setup Guide", url:"https://engagepositive.com/blog/google-shopping-ecommerce-uk-setup-guide/",
+    keyword:"google shopping united kingdom", position:13.2, impressions:15, ctr:"0%",
+    intent:"Transactional", action:"Refresh title + H1 to 'Google Shopping UK: 2026 Setup Guide'; add UK-specific sections (GBP feeds, VAT, UK Merchant Center specs); internal links from the Shopify and WooCommerce Google Ads posts; investigate the impression decay on this page.",
+    clarity:"Page impressions fell 214 to 63 (-71%); position slipped 10.3 to 13.2." },
+  { id:"2026-07-17-drop-1", runDate:"2026-07-17", category:"Traffic Drop",
+    title:"Meta Ads for DTC Brands", url:"https://engagepositive.com/blog/meta-ads-for-dtc-brands/",
+    keyword:"meta ads for dtc brands", position:9.3, impressions:22, ctr:"0%",
+    intent:"Informational", action:"Impressions down 90% (213 to 22), clicks 1 to 0, GA4 views halved (18 to 9). Refresh 2026 costs and benchmarks, re-promote via internal links from homepage and blog index, request reindex in Search Console.",
+    clarity:"Only individual blog post in Clarity's top pages (7 sessions/30d); site quick-back rate is 17%." },
+  { id:"2026-07-17-drop-2", runDate:"2026-07-17", category:"Traffic Drop",
+    title:"Abandoned Cart Email Sequence", url:"https://engagepositive.com/blog/abandoned-cart-email-sequence/",
+    keyword:"abandoned cart email sequence", position:9, impressions:6, ctr:"0%",
+    intent:"Informational", action:"Position dropped 6.2 to 9, clicks 2 to 0, GA4 views 10 to 2. Restore the SERP snippet (title and meta), refresh examples, add internal links from the email-flow cluster posts.",
+    clarity:"Site avg scroll depth 53%; too little traffic for page-level Clarity data." },
+  { id:"2026-07-17-drop-3", runDate:"2026-07-17", category:"Traffic Drop",
+    title:"Welcome Email Series", url:"https://engagepositive.com/blog/welcome-email-series/",
+    keyword:"welcome series email flow", position:33.1, impressions:138, ctr:"1.4%",
+    intent:"Informational", action:"Impressions down 62% (363 to 138) even though position improved 41.8 to 33.1. Consolidate with the email-flows cluster, target 'welcome email series' explicitly in the H1, add internal links from the /blog/ index.",
+    clarity:"GA4 views 10 to 2; engagement fell from 1m07s to 25s." },
+  { id:"2026-07-17-drop-4", runDate:"2026-07-17", category:"Traffic Drop",
+    title:"WooCommerce Marketing Plugins", url:"https://engagepositive.com/blog/woocommerce-marketing-plugins/",
+    keyword:"woocommerce marketing", position:24.9, impressions:383, ctr:"0%",
+    intent:"Informational", action:"Impressions down 51% (781 to 383). Highest-impression blog post but 0 clicks at pos 27. Refresh the plugin list for 2026, add a comparison table, tighten the title to match 'woocommerce marketing plugins' intent.",
+    clarity:"GA4 engagement fell from 1m12s to 9s." }
+];
+
+const STATUSES = ["New","Investigating","Fixing","Done","Monitoring"];
+const STATUS_COLOR = { New:"var(--new)", Investigating:"var(--investigating)",
+  Fixing:"var(--fixing)", Done:"var(--done)", Monitoring:"var(--monitoring)" };
+const STORE_KEY = "epw-blog-tracker-state-v1";
+
+function loadState(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+function saveState(s){ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+let state = loadState();
+
+function getItem(id){ return state[id] || { status:"New", notes:"", updated:null }; }
+function setItem(id, patch){
+  state[id] = Object.assign(getItem(id), patch, { updated: new Date().toISOString() });
+  saveState(state);
+}
+
+let filterStatus = "all";
+const runFilter = document.getElementById("runFilter");
+const catFilter = document.getElementById("catFilter");
+const search = document.getElementById("search");
+
+// Populate run filter
+[...new Set(FINDINGS.map(f=>f.runDate))].sort().reverse().forEach(d=>{
+  const o=document.createElement("option"); o.value=d; o.textContent="Run: "+d; runFilter.appendChild(o);
+});
+
+function fmtDate(iso){ if(!iso) return "not set";
+  const d=new Date(iso); return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" "+
+  d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }
+
+function renderChips(){
+  const el=document.getElementById("statusChips"); el.innerHTML="";
+  const counts={all:FINDINGS.length}; STATUSES.forEach(s=>counts[s]=0);
+  FINDINGS.forEach(f=>{ counts[getItem(f.id).status]=(counts[getItem(f.id).status]||0)+1; });
+  const mk=(key,label,color)=>{
+    const c=document.createElement("div"); c.className="chip"+(filterStatus===key?" active":"");
+    c.innerHTML=(color?`<span class="dot" style="background:${color}"></span>`:"")+
+      `${label}<span class="n">${counts[key]||0}</span>`;
+    c.onclick=()=>{ filterStatus=key; render(); }; el.appendChild(c);
+  };
+  mk("all","All"); STATUSES.forEach(s=>mk(s,s,STATUS_COLOR[s]));
+}
+
+function render(){
+  renderChips();
+  const list=document.getElementById("list"); list.innerHTML="";
+  const rf=runFilter.value, cf=catFilter.value, q=search.value.trim().toLowerCase();
+  const rows=FINDINGS.filter(f=>{
+    const it=getItem(f.id);
+    if(filterStatus!=="all" && it.status!==filterStatus) return false;
+    if(rf!=="all" && f.runDate!==rf) return false;
+    if(cf!=="all" && f.category!==cf) return false;
+    if(q && !(f.title+f.keyword+f.action+f.url).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=> b.runDate.localeCompare(a.runDate));
+
+  if(!rows.length){ list.innerHTML='<div class="empty">No findings match these filters.</div>'; return; }
+
+  rows.forEach(f=>{
+    const it=getItem(f.id);
+    const card=document.createElement("div"); card.className="card";
+    const isDrop=f.category==="Traffic Drop";
+    card.innerHTML=`
+      <div class="card-top">
+        <div>
+          <span class="tag ${isDrop?'drop':'opp'}">${f.category}</span>
+          <span class="runlbl">&nbsp; Run ${f.runDate} &middot; ${f.intent} intent</span>
+          <div class="title">${f.title}</div>
+          <a class="url" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
+        </div>
+        <span class="pill" style="background:${STATUS_COLOR[it.status]}">${it.status}</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><b>${f.keyword}</b><span>target keyword</span></div>
+        <div class="metric"><b>${f.position}</b><span>avg position</span></div>
+        <div class="metric"><b>${isNaN(Number(f.impressions))?(f.impressions||'n/a'):Number(f.impressions).toLocaleString()}</b><span>impressions / 28d</span></div>
+        <div class="metric"><b>${f.ctr}</b><span>CTR</span></div>
+      </div>
+      <div class="action"><span class="lbl">Recommended action</span><div>${f.action}</div></div>
+      ${f.clarity?`<div class="action"><span class="lbl">Clarity signal</span><div>${f.clarity}</div></div>`:""}
+      <div class="row2">
+        <label>Status:
+          <select class="statusSel" data-id="${f.id}">
+            ${STATUSES.map(s=>`<option ${s===it.status?'selected':''}>${s}</option>`).join("")}
+          </select>
+        </label>
+        <span class="updated">Updated: ${fmtDate(it.updated)}</span>
+      </div>
+      <textarea placeholder="Notes / what you did..." data-notes="${f.id}">${it.notes||""}</textarea>
+    `;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll(".statusSel").forEach(sel=>{
+    sel.onchange=()=>{ setItem(sel.dataset.id,{status:sel.value}); render(); };
+  });
+  list.querySelectorAll("textarea[data-notes]").forEach(t=>{
+    t.onchange=()=>{ setItem(t.dataset.notes,{notes:t.value}); };
+  });
+}
+
+runFilter.onchange=render; catFilter.onchange=render; search.oninput=render;
+
+document.getElementById("exportBtn").onclick=()=>{
+  const out=FINDINGS.map(f=>({ id:f.id, runDate:f.runDate, title:f.title, keyword:f.keyword,
+    status:getItem(f.id).status, notes:getItem(f.id).notes, updated:getItem(f.id).updated }));
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="blog-tracker-status-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+};
+
+// Hide sample banner if real (non-sample) data present
+if(!FINDINGS.some(f=>f.id.startsWith("2026-07-16-"))) {
+  document.getElementById("sampleBanner").style.display="none";
+}
+
+render();
+</script>
+</body>
+</html>

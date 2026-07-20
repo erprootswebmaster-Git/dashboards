@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Message Ads Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root { color-scheme: light; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f4f6f9; color:#1a202c; padding:20px; }
+.wrap { max-width:960px; margin:0 auto; }
+.hdr { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.hdr h1 { font-size:20px; font-weight:700; }
+.hdr .sub { font-size:12px; color:#64748b; }
+.badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; background:#e0e7ff; color:#3730a3; }
+.runbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 16px; margin-bottom:16px; }
+.runbar label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; }
+.runbar select { font-size:13px; padding:7px 30px 7px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#f8fafc; color:#1a202c; font-weight:600; cursor:pointer; }
+.runbar select:focus { outline:2px solid #6366f1; outline-offset:1px; }
+.runbar .runcount { font-size:12px; color:#94a3b8; margin-left:auto; }
+.runbar .viewing { font-size:11px; font-weight:600; padding:2px 9px; border-radius:999px; background:#fef3c7; color:#92400e; }
+.verdict { border-radius:14px; padding:18px 20px; margin-bottom:16px; color:#fff; }
+.verdict.better { background:linear-gradient(135deg,#059669,#10b981); }
+.verdict.onpar { background:linear-gradient(135deg,#d97706,#f59e0b); }
+.verdict.worse { background:linear-gradient(135deg,#dc2626,#ef4444); }
+.verdict.empty { background:linear-gradient(135deg,#475569,#64748b); }
+.verdict h2 { font-size:17px; margin-bottom:4px; }
+.verdict p { font-size:13px; opacity:.95; line-height:1.5; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin-bottom:16px; }
+.card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:14px; }
+.card .mname { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#64748b; font-weight:600; }
+.card .mval { font-size:22px; font-weight:700; margin:4px 0 2px; }
+.card .mdelta { font-size:12px; font-weight:600; }
+.card .mmean { font-size:11.5px; color:#475569; margin-top:6px; line-height:1.45; }
+.card .mbench { font-size:11px; color:#94a3b8; margin-top:4px; }
+.good { color:#059669; } .bad { color:#dc2626; } .ok { color:#d97706; }
+.dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+.dot.good { background:#059669; } .dot.bad { background:#dc2626; } .dot.ok { background:#d97706; }
+.sec { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 18px; margin-bottom:12px; }
+.sec h3 { font-size:13px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:7px; }
+.sec ul { list-style:none; }
+.sec li { font-size:13px; line-height:1.55; padding:6px 0 6px 18px; position:relative; border-bottom:1px dashed #f1f5f9; }
+.sec li:last-child { border-bottom:none; }
+.sec li::before { content:""; position:absolute; left:0; top:13px; width:7px; height:7px; border-radius:50%; }
+.sec.urgent li::before { background:#dc2626; }
+.sec.improve li::before { background:#2563eb; }
+.sec.stop li::before { background:#ea580c; }
+.sec .none { color:#94a3b8; font-size:13px; font-style:italic; }
+.ico { font-size:15px; }
+.pred { background:#fff; border:2px solid #6366f1; border-radius:12px; padding:16px 18px; margin-bottom:12px; }
+.pred h3 { font-size:13px; font-weight:700; color:#4338ca; margin-bottom:8px; }
+.pred .call { font-size:18px; font-weight:800; margin-bottom:4px; }
+.pred .call.win { color:#059669; } .pred .call.pivot { color:#dc2626; } .pred .call.hold { color:#d97706; }
+.pred p { font-size:13px; color:#334155; line-height:1.55; }
+.chartbox { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 18px; margin-bottom:12px; }
+.chartbox h3 { font-size:13px; font-weight:700; margin-bottom:10px; }
+.chartwrap { position:relative; height:220px; }
+.emptystate { text-align:center; padding:40px 20px; color:#64748b; font-size:14px; line-height:1.7; }
+.emptystate .big { font-size:34px; }
+.foot { text-align:center; font-size:11px; color:#94a3b8; margin-top:14px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <h1>Aceteroid Message Ads <span class="badge">Lead Gen &middot; MENA</span></h1>
+      <div class="sub" id="updated">Awaiting first run</div>
+    </div>
+    <div class="sub" style="text-align:right">ACETEROID_LI_MSGADS_LEADGEN_MENA_SAPDM_JUL26<br>Auto-refreshes 10:00 AM &amp; 4:00 PM daily</div>
+  </div>
+  <div id="app"></div>
+  <div class="foot">Monitored by Claude twice daily via LinkedIn Campaign Manager.<br>Benchmarks refreshed from current industry data each run.</div>
+</div>
+
+<script id="dash-data" type="application/json">
+{"campaign":"ACETEROID_LI_MSGADS_LEADGEN_MENA_SAPDM_JUL26","account":"Aceteroid","goal":"Lead generation","updatedAt":"Jul 20, 2026 10:22 AM","runs":[{"ts":"Jul 16, 2026 2:56 PM","verdict":"worse","verdictNote":"First monitored check, 7 days into delivery: Rs 1,164 (~$13) spent, 31 messages delivered, 17 opened, but 0 clicks and 0 leads. Opens look fine (54.8%, in line with the auto-open inflated ~50% platform norm), yet click-to-open is 0% vs the 3-5% benchmark, so nobody ever reaches your lead form. CPL is undefined vs the $75-150 B2B benchmark because there are no leads yet.","prediction":{"call":"hold","when":"Decision point around Jul 23-25, after 4-6 more checks","confidence":"low","note":"First run, so there is no trend history yet and spend is still tiny (~$13), which is too early to call a pivot. If a CTA rewrite produces first clicks within 2-3 days and a first lead by ~200 sends, this can still win. If clicks are still zero by Jul 23, plan to pivot the message copy or the audience.","evidence":"Awaiting: first clicks after copy fix, 200+ cumulative sends, 6+ monitoring runs"},"urgent":["Zero clicks from 17 opens: the message body / CTA converts nobody, every rupee so far bought attention but no action.","Delivery is tiny: only 31 sends in 7 days against a Rs 500/day budget. The MENA audience is too small under LinkedIn's one-message-per-person-per-45-days cap, so the budget cannot spend.","0 leads despite Rs 1,164 spent: the funnel is broken at the click step, not the form step."],"improve":["Rewrite the message first: offer in the first 2 lines, one benefit-led CTA button (e.g. 'Get the SAP DM readiness checklist'), cut total length by half.","Widen the audience: add adjacent SAP / digital-manufacturing job titles and skills, and cover all GCC geos, so the daily budget can actually deliver sends.","Match the MENA workweek: schedule sends Sunday-Thursday, 9-11 AM Gulf time, and pause Friday-Saturday.","Trim the lead gen form to 3 auto-filled fields (name, work email, company) so completions are instant once clicks start.","Prepare a second message variant with a different opener and CTA to A/B test as soon as delivery volume rises."],"stop":[],"metrics":[{"name":"Status","value":"Active / On","delta":"","status":"good","meaning":"Campaign is delivering with a Maximum Delivery bid and a Rs 500 daily budget.","benchmark":"n/a"},{"name":"Spend (last 7 days)","value":"Rs 1,163.87","delta":"Rs 413.87 today (83% of daily cap)","status":"ok","meaning":"About $13 total, small in absolute terms, so no runaway spend yet.","benchmark":"Your cap: Rs 500/day"},{"name":"Sends (last 7 days)","value":"31","delta":"17 today","status":"bad","meaning":"Very low delivery. The audience is too small to absorb the budget under the 45-day frequency cap.","benchmark":"Audience-limited"},{"name":"Open rate","value":"54.8%","delta":"58.8% today","status":"ok","meaning":"Looks strong, but LinkedIn auto-opens inflate this. Real read rate is typically 15-25%, so treat subject/sender as fine, not great.","benchmark":"~50% platform-reported; 15-25% real"},{"name":"Click-to-open rate","value":"0%","delta":"0 clicks total","status":"bad","meaning":"17 opens, zero clicks: the body copy, offer or CTA is failing. This is the metric to fix first.","benchmark":"3-5%"},{"name":"Leads","value":"0","delta":"","status":"bad","meaning":"No clicks means the lead form was never seen, so form completion cannot be judged yet.","benchmark":"30-40% of clicks complete form"},{"name":"Cost per lead","value":"n/a","delta":"no leads yet","status":"bad","meaning":"Undefined until the first lead arrives. Every additional rupee spent raises the eventual CPL.","benchmark":"$75-150 (Rs 6.5k-13k) B2B"},{"name":"Cost per send","value":"Rs 37.54","delta":"Rs 24.35 today (~$0.28)","status":"good","meaning":"About $0.43 per send over 7 days, inside the normal range. Delivery pricing is not the problem.","benchmark":"$0.30-1.00 per send"}]},{"ts":"Jul 16, 2026 4:21 PM","verdict":"worse","verdictNote":"4 PM check. Spend Rs 1,171.50 (~$12) with 32 messages delivered, 17 opened, but still 0 clicks and 0 leads. Opens read healthy at 53.1% (in line with the auto-open inflated ~50% platform norm), yet click-to-open is 0% vs the 3-5% benchmark, so no one reaches the lead form. CPL is undefined vs the $75-400 B2B benchmark because there are still no leads. Note: the Campaign Manager date picker did not respond to automation this run, so these are the default-window totals, which for this ~7-day-old campaign match the last-7-days view (32 vs 31 sends at the 2:56 PM check).","prediction":{"call":"hold","when":"Decision point around Jul 23, after ~4 more checks","confidence":"low","note":"Two runs of history now and spend is still tiny (~$12), too early to call a pivot. If a CTA rewrite produces first clicks within 2-3 days and a first lead by ~200 sends, this can still win. If clicks are still zero by Jul 23, pivot the message copy or the audience.","evidence":"Awaiting: first clicks after a copy fix, 200+ cumulative sends, 6+ monitoring runs"},"urgent":["Still zero clicks from 17 opens after ~$12 spent: the message body / CTA converts nobody. Unchanged since the 2:56 PM check.","Delivery is near-stalled: only +1 send since the last check and 32 total. The MENA audience is too small under LinkedIn's one-message-per-person-per-45-days cap, so the budget cannot spend.","0 leads while spend keeps ticking: the funnel is broken at the click step, not the form step."],"improve":["Rewrite the message first: put the offer in the first 2 lines, use one benefit-led CTA button (e.g. 'Get the SAP DM readiness checklist'), and cut total length by half.","Widen the audience: add adjacent SAP / digital-manufacturing job titles and skills and cover all GCC geos so the daily budget can actually deliver sends.","Match the MENA workweek: schedule sends Sunday-Thursday, 9-11 AM Gulf time, and pause Friday-Saturday.","Trim the lead gen form to 3 auto-filled fields (name, work email, company) so completions are instant once clicks start.","Prepare a second message variant with a different opener and CTA to A/B test as soon as delivery volume rises."],"stop":[],"metrics":[{"name":"Status","value":"Active / On","delta":"","status":"good","meaning":"Campaign is live and delivering, no disapprovals seen.","benchmark":"n/a"},{"name":"Spend (window)","value":"Rs 1,171.50","delta":"+Rs 7.63 since 2:56 PM","status":"ok","meaning":"About $12 total, small in absolute terms, so no runaway spend yet.","benchmark":"Your cap: Rs 500/day"},{"name":"Sends","value":"32","delta":"+1 since last check","status":"bad","meaning":"Very low delivery. The audience is too small to absorb the budget under the 45-day frequency cap.","benchmark":"Audience-limited"},{"name":"Open rate","value":"53.13%","delta":"17 opens, flat","status":"ok","meaning":"Looks strong, but LinkedIn auto-opens inflate this. Real read rate is typically 15-25%, so treat subject/sender as fine, not great.","benchmark":"~50% reported; 15-25% real"},{"name":"Click-to-open rate","value":"0%","delta":"still 0 clicks","status":"bad","meaning":"17 opens, zero clicks: the body copy, offer or CTA is failing. Fix this first.","benchmark":"3-5%"},{"name":"Leads","value":"0","delta":"no change","status":"bad","meaning":"No clicks means the lead form was never reached, so completion cannot be judged yet.","benchmark":"30-40% of clicks"},{"name":"Cost per lead","value":"n/a","delta":"no leads yet","status":"bad","meaning":"Undefined until the first lead arrives. Every extra rupee raises the eventual CPL.","benchmark":"$75-400 B2B"},{"name":"Cost per send","value":"Rs 36.61","delta":"~$0.38, vs Rs 37.54 prior","status":"good","meaning":"Inside the normal range. Delivery pricing is not the problem.","benchmark":"$0.30-1.00 per send"}]},{"ts":"Jul 17, 2026 12:24 PM","verdict":"worse","verdictNote":"Manual midday check. Spend Rs 1,863.21 (~$22) with 57 messages delivered and 27 opened, but still 0 clicks and 0 leads across all three checks. Delivery finally picked up (+25 sends since the Jul 16 4 PM check), yet every new send feeds a funnel that converts nobody: open rate 47.4% sits in line with the auto-open inflated ~50% platform norm, click-to-open stays 0% vs the 3-5% benchmark, and CPL is undefined vs the $75-400 B2B benchmark. Note: the date picker again did not respond to automation, so figures are the default-window totals, which for this young campaign equal the last-7-days view; deltas vs the previous check stand in for today so far.","prediction":{"call":"hold","when":"Decision point around Jul 23, after 3-4 more checks","confidence":"low","note":"Three checks logged and spend is still small (~$22), with 57 sends well short of the 500-send stop threshold. Delivery is finally flowing, so the copy now gets a real test: if a rewritten CTA produces first clicks within 2-3 days and a first lead by ~200 sends, this can still win. If click-to-open is still 0% by Jul 23, pivot the message copy or the audience.","evidence":"Awaiting: first clicks after a copy fix, 200+ cumulative sends, 6+ monitoring runs"},"urgent":["Still zero clicks from 27 opens after Rs 1,863 (~$22) spent: the message body / CTA converts nobody, unchanged across all three checks.","Delivery jumped (+25 sends, +Rs 692 since Jul 16 4 PM): the budget now burns at roughly the full Rs 500/day pace into a funnel with no working conversion path, so fix the copy before send volume grows further.","0 leads with spend rising: the funnel is broken at the click step, not the form step."],"improve":["Rewrite the message now, while delivery is flowing: offer in the first 2 lines, one benefit-led CTA button (e.g. 'Get the SAP DM readiness checklist'), half the current length.","Launch a second message variant with a different opener and CTA: delivery volume is finally high enough for an A/B test to read out.","Keep sends inside the MENA workweek: Sunday-Thursday, 9-11 AM Gulf time, pause Friday-Saturday (today is a Friday, a weekend day in most of MENA).","Trim the lead gen form to 3 auto-filled fields (name, work email, company) so completions are instant once clicks start.","Recheck audience headroom weekly: LinkedIn's one-message-per-person-per-45-days cap means this delivery burst will exhaust a small MENA audience quickly."],"stop":[],"metrics":[{"name":"Status","value":"Active / On","delta":"","status":"good","meaning":"Campaign is live and runnable with auto bid and a Rs 500 daily budget, no disapprovals seen.","benchmark":"n/a"},{"name":"Spend (window)","value":"Rs 1,863.21","delta":"+Rs 691.71 since Jul 16 4 PM","status":"ok","meaning":"About $22 total. Pacing now runs near the full daily cap, so waste accumulates faster while conversion stays zero.","benchmark":"Your cap: Rs 500/day"},{"name":"Sends","value":"57","delta":"+25 since last check","status":"ok","meaning":"Delivery picked up markedly after a stalled first week. Volume is finally enough to judge the message copy.","benchmark":"Audience-limited"},{"name":"Open rate","value":"47.37%","delta":"27 opens, +10","status":"ok","meaning":"In line with the platform norm, but LinkedIn auto-opens inflate this. Real read rate is typically 15-25%.","benchmark":"~50% reported; 15-25% real"},{"name":"Click-to-open rate","value":"0%","delta":"still 0 clicks","status":"bad","meaning":"27 opens, zero clicks: the body copy, offer or CTA is failing. Fix this first.","benchmark":"3-5%"},{"name":"Leads","value":"0","delta":"no change","status":"bad","meaning":"No clicks means the lead form was never reached, so completion cannot be judged yet.","benchmark":"30-40% of clicks"},{"name":"Cost per lead","value":"n/a","delta":"no leads yet","status":"bad","meaning":"Undefined until the first lead arrives. Every extra rupee raises the eventual CPL.","benchmark":"$75-400 B2B"},{"name":"Cost per send","value":"Rs 32.69","delta":"~$0.39, vs Rs 36.61 prior","status":"good","meaning":"Inside the normal range and improving as delivery scales. Pricing is not the problem.","benchmark":"$0.30-1.00 per send"}]},{"ts":"Jul 17, 2026 4:26 PM","verdict":"worse","verdictNote":"4 PM check, and this run pulled true today and last-7-days windows from Campaign Manager for the first time. Today so far: Rs 444.02 spent (89% of the Rs 500 daily cap) for 10 sends, 6 opens, 0 clicks, 0 leads; last 7 days: Rs 1,863.21, 57 sends, 30 opens, still 0 clicks and 0 leads across all four checks. Open rate 52.63% is in line with the auto-open inflated ~50% platform norm, but click-to-open stays 0% vs the 3-5% benchmark, so CPL remains undefined vs the $75-400 B2B range.","prediction":{"call":"hold","when":"Decision point around Jul 23, after 2-3 more checks","confidence":"low","note":"Four checks logged, spend still small (~$22) and 57 sends is well short of the 500-send stop threshold, so a pivot call would be premature. The copy has now failed 30 straight opens: rewrite the CTA before Sunday when the MENA workweek resumes. If click-to-open is still 0% by Jul 23, pivot the message or the audience.","evidence":"Awaiting: first clicks after a copy fix, 200+ cumulative sends, 6+ monitoring runs"},"urgent":["Still zero clicks from 30 opens after Rs 1,863 (~$22): the message body / CTA converts nobody, unchanged across four checks.","Today burned Rs 444 (89% of the daily cap) on just 10 sends: cost per send hit Rs 44.40 today vs the Rs 32.69 running average, +36%, paying more per message into a funnel with no conversions.","Delivery flat since midday (57 sends at both the 12:24 PM and 4:26 PM checks): today is Friday, a weekend day in most of MENA, so this morning's spend bought weekend-audience sends."],"improve":["Rewrite the message body and CTA before Sunday: 30 opens with 0 clicks is a copy failure, not a delivery failure. Offer in the first 2 lines, one benefit-led CTA button, half the length.","Restrict the send schedule to Sunday-Thursday, 9-11 AM Gulf time: today's Rs 444 largely bought Friday sends at a 36% higher cost per send.","Launch a second message variant with a different opener and CTA so an A/B test reads out when delivery resumes Sunday.","Widen the audience with adjacent SAP / digital-manufacturing titles and all GCC geos: 57 sends in 3 days (~19/day) says the pool is thin under LinkedIn's one-message-per-45-days cap.","Keep the lead gen form at 3 auto-filled fields (name, work email, company) so completions are instant once clicks start."],"stop":[],"metrics":[{"name":"Status","value":"Active / On","delta":"","status":"good","meaning":"Campaign is live and runnable with a Rs 500 daily budget, no disapprovals seen.","benchmark":"n/a"},{"name":"Spend (today)","value":"Rs 444.02","delta":"7 days: Rs 1,863.21","status":"ok","meaning":"89% of the daily cap was gone by midday, then delivery stopped for the MENA weekend. About $22 total so far.","benchmark":"Your cap: Rs 500/day"},{"name":"Sends (today)","value":"10","delta":"7 days: 57, +0 since 12:24 PM","status":"bad","meaning":"Delivery stalled after midday. Friday is a weekend day in MENA, and the 45-day frequency cap keeps the reachable pool small.","benchmark":"Audience-limited"},{"name":"Open rate","value":"60% today","delta":"52.63% over 7 days","status":"ok","meaning":"Looks strong but LinkedIn auto-opens inflate this; real read rate is typically 15-25%. Subject and sender are fine.","benchmark":"~50% reported; 15-25% real"},{"name":"Click-to-open rate","value":"0%","delta":"30 opens, 0 clicks","status":"bad","meaning":"Nobody who opens takes any action: the body copy, offer or CTA is failing. Fix this first.","benchmark":"3-5%"},{"name":"Leads","value":"0","delta":"no change in 4 checks","status":"bad","meaning":"No clicks means the lead gen form was never reached, so completion cannot be judged yet.","benchmark":"Forms convert 10-18% once reached"},{"name":"Cost per lead","value":"n/a","delta":"no leads yet","status":"bad","meaning":"Undefined until the first lead arrives. Every extra rupee raises the eventual CPL.","benchmark":"$75-400 B2B"},{"name":"Cost per send","value":"Rs 44.40 today","delta":"+36% vs Rs 32.69 7-day avg","status":"ok","meaning":"About $0.52 today, still inside the normal range, but the jump suggests auction pressure or weekend inefficiency.","benchmark":"$0.30-1.00 per send"}]},{"ts":"Jul 20, 2026 10:22 AM","verdict":"worse","verdictNote":"Monday 10 AM check, first since Friday. The campaign's first click finally arrived over the weekend (click-to-open now 2.44%, still under the 3-5% benchmark) but it produced no lead, so the funnel now leaks at the form step too. Today's delivery is expensive: Rs 750 already spent (150% of the Rs 500 daily cap) for just 5 sends at Rs 150 per send, 3.3x the 7-day average of Rs 45.14 and above the $0.30-1.00 benchmark. Still 0 leads after Rs 3,250 (~$37) and 72 sends, so CPL stays undefined vs the $75-400 B2B benchmark, and the audience is now confirmed at 16,000+, far below LinkedIn's recommended 50,000 minimum.","prediction":{"call":"hold","when":"Decision point Jul 23, after 2-3 more checks","confidence":"low","note":"Five checks logged and leads are flat at zero across all of them, which starts the pivot clock, but history only spans 4 days and total spend (~$37) is still below even one benchmark CPL, so a pivot call now would be premature. The weekend's first click proves the funnel can move. If a lower-commitment CTA plus a bid cap produce no lead and click-to-open stays under 3% by Jul 23 (7 days of history), call the pivot: rewrite the message and rebuild the audience rather than keep buying Rs 150 sends into a 16k pool.","evidence":"Awaiting: first lead or 3%+ CTOR after CTA swap, 200+ cumulative sends, 7 days of run history (Jul 23)"},"urgent":["Cost per send tripled today: Rs 150.00 vs the Rs 45.14 7-day average (+232%) and above the $0.30-1.00 benchmark. Rs 750 went out this morning (150% of the Rs 500 daily cap) and bought only 5 sends and 1 open.","Audience size confirmed at 16,000+, well under LinkedIn's recommended 50,000 minimum. With the platform's one-message-per-person-per-45-days cap, the reachable pool is thinning and rising send costs are the classic burnout signal.","First click, still no lead: the weekend click never completed the 'Book a Demo Now!' form, so 0 leads stand after Rs 3,250 (~$37) and 72 sends across 5 checks. Demo is too big an ask for a cold message."],"improve":["Swap the CTA from 'Book a Demo Now!' to a low-commitment offer such as 'Get the SAP migration cost checklist': 41 opens have produced 1 click and 0 leads, and a demo ask in a cold InMail is the likeliest reason.","Cap the bid: move from Maximum Delivery to a manual cost-per-send bid around Rs 45-55 so LinkedIn stops buying Rs 150 sends from a thin auction.","Widen the audience toward 50,000+: relax company size to include 1001-5000 employees or drop one AND layer (industries or job functions) from the 5-layer targeting stack behind the 16,000 pool.","Enforce the MENA workweek: pause Friday-Saturday and concentrate delivery Sunday-Thursday 9-11 AM Gulf time; today is Monday, a workday, so fixes land immediately.","Rebuild the lead gen form around the new offer with 3 auto-filled fields (name, work email, company) so the next click converts instantly."],"stop":[],"metrics":[{"name":"Status","value":"Active / On","delta":"","status":"good","meaning":"Campaign, ad set and the single message ad are all live and approved, delivering today.","benchmark":"n/a"},{"name":"Spend (today)","value":"Rs 750.00","delta":"150% of the Rs 500 daily cap","status":"bad","meaning":"LinkedIn may spend up to 1.5x the daily budget in a day, and today it did, for almost nothing: 5 sends and 1 open so far.","benchmark":"Your cap: Rs 500/day"},{"name":"Spend (last 7 days)","value":"Rs 3,250.00","delta":"+Rs 1,387 since Jul 17 check","status":"ok","meaning":"About $37 total. Small in dollars, but every rupee is still producing zero leads.","benchmark":"n/a"},{"name":"Sends","value":"5 today / 72 in 7d","delta":"+15 since Jul 17","status":"bad","meaning":"Roughly 10 sends per day. The 16k audience and the 45-day frequency cap are choking delivery, so the budget overpays for what little inventory exists.","benchmark":"Audience-limited"},{"name":"Open rate","value":"56.94% (7d)","delta":"20% today, opens lag sends","status":"ok","meaning":"At the ~50% platform norm, but auto-opens inflate this: real read rate is typically 15-25%. The subject line is doing its job.","benchmark":"~50% reported; 15-25% real"},{"name":"Click-to-open rate","value":"2.44% (7d)","delta":"first click ever, logged over the weekend","status":"ok","meaning":"Progress after four checks at 0%, but still below the 3-5% benchmark: 1 click from 41 opens says the CTA remains too weak or too big an ask.","benchmark":"3-5%"},{"name":"Leads","value":"0","delta":"flat across all 5 checks","status":"bad","meaning":"The one click did not complete the form, so the funnel now leaks at both the click step and the form step.","benchmark":"Forms convert 10-18% once reached"},{"name":"Cost per lead","value":"n/a","delta":"no leads after Rs 3,250","status":"bad","meaning":"Undefined until the first lead arrives. Every extra rupee raises the eventual CPL.","benchmark":"$75-400 B2B"},{"name":"Cost per send","value":"Rs 150.00 today","delta":"+232% vs Rs 45.14 7-day avg","status":"bad","meaning":"About $1.72 per send today, above the $0.30-1.00 norm for the first time. Rising cost per send into a small pool means LinkedIn is digging deep to find anyone still eligible.","benchmark":"$0.30-1.00 per send"},{"name":"Audience size","value":"16,000+","delta":"captured for the first time","status":"bad","meaning":"Below LinkedIn's recommended 50,000 minimum. Five stacked AND filters (SAP skills, industry, seniority, function, company size) across 8 MENA countries built a pool too small to spend Rs 500/day efficiently.","benchmark":"50,000+ recommended"},{"name":"Frequency","value":"~1 per person","delta":"","status":"good","meaning":"LinkedIn hard-caps sponsored messages at 1 per member per 45 days across ALL advertisers, so fatigue cannot happen, but each of the 16k members can only be reached once per cycle.","benchmark":"Cap: 1 per 45 days"}]}],"history":[{"date":"07/16 3PM","cpl":null,"leads":0,"openRate":54.8,"ctr":0},{"date":"07/16 4PM","cpl":null,"leads":0,"openRate":53.13,"ctr":0},{"date":"07/17 12PM","cpl":null,"leads":0,"openRate":47.37,"ctr":0},{"date":"07/17 4PM","cpl":null,"leads":0,"openRate":52.63,"ctr":0},{"date":"07/20 10AM","cpl":null,"leads":0,"openRate":56.94,"ctr":2.44}]}
+</script>
+
+<script>
+const D = JSON.parse(document.getElementById('dash-data').textContent);
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const vClass = {better:'better', 'on-par':'onpar', worse:'worse'};
+const vTitle = {better:'You are beating industry standard', 'on-par':'You are on par with industry standard', worse:'You are below industry standard'};
+let chart = null;
+
+if (!D.runs || D.runs.length === 0) {
+  app.innerHTML = `
+    <div class="verdict empty"><h2>Dashboard armed, waiting for first check</h2>
+    <p>First run pulls your campaign data from LinkedIn Campaign Manager, compares it to current industry benchmarks, and fills every section below.</p></div>
+    <div class="sec"><div class="emptystate"><div class="big">&#128225;</div>
+    Next check runs at 10:00 AM or 4:00 PM, whichever comes first.<br>
+    Keep the Claude app and Chrome (logged into LinkedIn) open at those times.</div></div>`;
+} else {
+  const runs = D.runs;
+  const lastIdx = runs.length - 1;
+
+  const opts = runs.map((r,i)=>({i,r})).reverse()
+    .map(({i,r})=>`<option value="${i}"${i===lastIdx?' selected':''}>${esc(r.ts)} &middot; ${esc((r.verdict||'').toUpperCase())}${i===lastIdx?' (latest)':''}</option>`).join('');
+  app.innerHTML = `
+    <div class="runbar">
+      <label for="runsel">Version</label>
+      <select id="runsel" aria-label="Select which check to view">${opts}</select>
+      <span class="runcount">${runs.length} check${runs.length>1?'s':''} logged</span>
+    </div>
+    <div id="runbody"></div>`;
+  const sel = document.getElementById('runsel');
+  const body = document.getElementById('runbody');
+
+  function renderRun(idx){
+    const r = runs[idx];
+    const isLatest = idx === lastIdx;
+    document.getElementById('updated').textContent = (isLatest ? 'Last updated: ' + (D.updatedAt || r.ts) : 'Viewing earlier check: ' + r.ts);
+
+    let html = `<div class="verdict ${vClass[r.verdict]||'onpar'}"><h2>${vTitle[r.verdict]||'Status'}${isLatest?'':' <span class="viewing">archived check</span>'}</h2><p>${esc(r.verdictNote)}</p></div>`;
+
+    html += `<div class="sec urgent"><h3><span class="ico">&#128680;</span>Immediate attention needed</h3><ul>`;
+    html += (r.urgent && r.urgent.length) ? r.urgent.map(x=>`<li>${esc(x)}</li>`).join('') : `<li class="none" style="border:none">Nothing urgent right now.</li>`;
+    html += `</ul></div>`;
+
+    html += `<div class="grid">` + (r.metrics||[]).map(m=>`
+      <div class="card">
+        <div class="mname"><span class="dot ${m.status}"></span>${esc(m.name)}</div>
+        <div class="mval">${esc(m.value)}</div>
+        <div class="mdelta ${m.status}">${esc(m.delta||'')}</div>
+        <div class="mmean">${esc(m.meaning)}</div>
+        <div class="mbench">Benchmark: ${esc(m.benchmark||'n/a')}</div>
+      </div>`).join('') + `</div>`;
+
+    if (D.history && D.history.length > 1) {
+      html += `<div class="chartbox"><h3>&#128200; Trend across all checks: open rate &amp; click-to-open</h3><div class="chartwrap"><canvas id="trend"></canvas></div></div>`;
+    }
+
+    const p = r.prediction || {};
+    const callClass = (p.call||'hold').toLowerCase();
+    const callText = {win:'&#127942; ON TRACK TO WIN', pivot:'&#8620; TIME TO PIVOT', hold:'&#9203; HOLD &amp; WATCH'}[callClass] || esc(p.call);
+    html += `<div class="pred"><h3>&#128302; Win or pivot forecast</h3>
+      <div class="call ${callClass}">${callText}</div>
+      <p><strong>${esc(p.when||'')}</strong> ${p.when?'&middot; ':''}Confidence: ${esc(p.confidence||'low')}</p>
+      <p>${esc(p.note)}</p></div>`;
+
+    html += `<div class="sec improve"><h3><span class="ico">&#128295;</span>What can be improved</h3><ul>`;
+    html += (r.improve && r.improve.length) ? r.improve.map(x=>`<li>${esc(x)}</li>`).join('') : `<li class="none" style="border:none">No suggestions this run.</li>`;
+    html += `</ul></div>`;
+
+    html += `<div class="sec stop"><h3><span class="ico">&#128721;</span>Stop immediately</h3><ul>`;
+    html += (r.stop && r.stop.length) ? r.stop.map(x=>`<li>${esc(x)}</li>`).join('') : `<li class="none" style="border:none">Nothing needs to be killed right now.</li>`;
+    html += `</ul></div>`;
+
+    body.innerHTML = html;
+
+    if (D.history && D.history.length > 1) {
+      if (chart) { chart.destroy(); chart = null; }
+      chart = new Chart(document.getElementById('trend'), {
+        type: 'line',
+        data: {
+          labels: D.history.map(h=>h.date),
+          datasets: [
+            { label:'Open rate %', data:D.history.map(h=>h.openRate), borderColor:'#d97706', backgroundColor:'rgba(217,119,6,.08)', tension:.3, yAxisID:'y' },
+            { label:'Click-to-open %', data:D.history.map(h=>h.ctr), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.08)', tension:.3, yAxisID:'y' },
+            { label:'Leads', data:D.history.map(h=>h.leads), borderColor:'#059669', backgroundColor:'rgba(5,150,105,.08)', tension:.3, yAxisID:'y1' }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false,
+          scales: { y:{position:'left', title:{display:true,text:'Rate %'}}, y1:{position:'right', grid:{drawOnChartArea:false}, title:{display:true,text:'Leads'}, ticks:{precision:0} } },
+          plugins: { legend:{labels:{boxWidth:12,font:{size:11}}} } }
+      });
+    }
+  }
+
+  renderRun(lastIdx);
+  sel.addEventListener('change', e => renderRun(parseInt(e.target.value, 10)));
+}
+</script>
+</body>
+</html>
