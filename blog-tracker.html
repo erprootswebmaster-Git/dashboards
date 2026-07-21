@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Blog Performance Tracker",
+  "schemaVersion": 1,
+  "description": "Interactive tracker for engagepositive.com blog performance. Shows findings from each scheduled run (keyword opportunities + traffic drops from GA4/Search Console/Clarity) with per-item status (New/Investigating/Fixing/Done/Monitoring) and notes, saved locally in the view. Latest run: 2026-07-21."
+}
+</script>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -137,7 +143,27 @@ const FINDINGS = [
     title:"WooCommerce Marketing Plugins", url:"https://engagepositive.com/blog/woocommerce-marketing-plugins/",
     keyword:"woocommerce marketing", position:24.9, impressions:383, ctr:"0%",
     intent:"Informational", action:"Impressions down 51% (781 to 383). Highest-impression blog post but 0 clicks at pos 27. Refresh the plugin list for 2026, add a comparison table, tighten the title to match 'woocommerce marketing plugins' intent.",
-    clarity:"GA4 engagement fell from 1m12s to 9s." }
+    clarity:"GA4 engagement fell from 1m12s to 9s." },
+  { id:"2026-07-21-opp-1", runDate:"2026-07-21", category:"Keyword Opportunity",
+    title:"VIP Email Flow", url:"https://engagepositive.com/blog/vip-email-flow/",
+    keyword:"how do i build a vip segment and dedicated email flow", position:5.2, impressions:19, ctr:"0%",
+    intent:"Informational", action:"Best-positioned blog opportunity (pos 5.2). Add a step-by-step 'How to build a VIP segment in Klaviyo' H2 that answers the conversational query near the top; add a VIP trigger examples section (sister query 'how do i use vip triggers' pos 6.4 / 17 imp); add FAQ schema; internal links to /services/ and /blog/win-back-email-campaigns/.",
+    clarity:"Site quick-back rate 16.1%; tighten the intro to match query intent." },
+  { id:"2026-07-21-opp-2", runDate:"2026-07-21", category:"Keyword Opportunity",
+    title:"Shopify SEO Agency UK", url:"https://engagepositive.com/blog/shopify-seo-agency-uk/",
+    keyword:"top shopify seo agencies uk", position:13.8, impressions:26, ctr:"0%",
+    intent:"Transactional", action:"Rewrite title + H1 as a 'Top Shopify SEO Agencies UK (2026)' listicle; add an agency comparison table; add a 'How to choose a Shopify SEO agency' H2 (sister query pos 14.3 / 20 imp); add FAQ schema; internal links from /services/ and /case-studies/.",
+    clarity:"Very low GA4 sessions; strengthen the above-fold value proposition." },
+  { id:"2026-07-21-opp-3", runDate:"2026-07-21", category:"Keyword Opportunity",
+    title:"Google Shopping Ecommerce UK Setup Guide", url:"https://engagepositive.com/blog/google-shopping-ecommerce-uk-setup-guide/",
+    keyword:"google shopping united kingdom", position:13.2, impressions:15, ctr:"0%",
+    intent:"Transactional", action:"Add a 'Google Shopping UK setup' H2 with UK-specific steps (Merchant Center, GBP currency, VAT); add 'UK' to the title tag; add a setup checklist and FAQ schema; internal links from /blog/shopify-google-ads-setup/ and /services/.",
+    clarity:"Too little traffic for page-level Clarity data yet." },
+  { id:"2026-07-21-drop-1", runDate:"2026-07-21", category:"Traffic Drop",
+    title:"WooCommerce Marketing Plugins", url:"https://engagepositive.com/blog/woocommerce-marketing-plugins/",
+    keyword:"woocommerce marketing plugins", position:27.0, impressions:404, ctr:"0%",
+    intent:"Transactional", action:"Highest-impression blog post (404 imp) still earning 0 clicks at pos 27 (page 3); impressions recovered slightly from 383. Refresh the plugin list for 2026, add a comparison table, tighten the title to 'best woocommerce marketing plugins' intent, and build internal links to lift it onto pages 1-2.",
+    clarity:"Site dead clicks 0.98% (2 sessions), rage clicks 0%." }
 ];
 
 const STATUSES = ["New","Investigating","Fixing","Done","Monitoring"];
